@@ -1,0 +1,207 @@
+---
+title: "Chapter 3"
+author: "Gabriela DSouza"
+date: "31/05/2021"
+output: html_document
+---
+#Chapter 3
+
+```{r}
+p_grid<-seq(from=0, t=1, length.out=1000)
+
+
+prob_p<-rep(1,1000)
+prob_data<-dbinom(6,size=9, prob=p_grid)
+posterior<-prob_data*prob_p
+posterior<-posterior/sum(posterior)
+```
+
+
+```{r}
+#drawing 10,000 samples from a bucket
+samples<-sample(p_grid, prob=posterior, size=1e4, replace=TRUE)
+```
+
+The sample function here pulls values from a vector which in this case if p_grid the grid fo parameter values
+The probability of each value is the posterior which we computed above. 
+```{r}
+plot(samples)
+
+library(rethinking)
+dens(samples)
+
+```
+
+
+
+## 1. Intervals of defined boundaries. 
+Suppose you're asked for the posterior probability that the proportion of water is less than 0.5
+Add up posterior probability where p<0.5
+```{r}
+sum(posterior[p_grid<0.5])
+```
+
+So about 17% of the posterior probability is below 0.5
+
+The method to use without making use of grid approximation is add up all of the samples below 0.5 
+and divide the resulting count by the total number of smaples 
+```{r}
+sum(samples<0.5)/1e4
+```
+
+Using the same approximation you can find how muhc posterior probability lies between 0.5 and 0.75
+
+```{r}
+sum(samples>0.5 & samples<0.75)/1e4
+```
+So about 61 percent of the posterior probability lies between 0.50 and 0.75
+
+
+## 2. Intervals of defined mass 
+
+Similar to the confidence interal idea. 
+And interval o fposterior probaility is called a credibility interval but we refer to it here as compatibility interval
+
+These posterior intervals report two parameter values that contain between them a specified amount of posterior probabiltiy, a probability mass. 
+
+```{r}
+
+quantile(samples,0.8)
+```
+
+```{r}
+quantile(samples, c(0.1,0.9))
+```
+
+Intervals of this sort which assign equal probability mass to eahch tail are very common in the scientific literature
+We call them percentile intervals (PI). These intervals do a good job of communicating the shape of oa distribution as long as the distribution isn't too asymmetrical
+
+```{r}
+p_grid<-seq(from=0, to=1, length.out=1000)
+prior<-rep(1,1000)
+likelihood<-dbinom(3,size=3, prob=p_grid)
+posterior<-likelihood*prior
+posterior<-posterior/sum(posterior)
+samples<-sample(p_grid, size=1e4, replace=TRUE, prob=posterior)
+plot(posterior)
+PI(samples, prob=0.5)
+```
+
+This interval assigns 25 % of the probability mass above and below the interval. So it provides the central 50% probability
+In contrast the right-hand plot in the figure displays the 50% highest posterior density interval (HPDI)
+
+```{r}
+HPDI(samples, prob=0.5)
+```
+This interval captures the parameters with highest posterior probability as well as bieng noticeably narrower
+0.16 in width rather than 0.23 for the percentile interval
+
+The HDPI has some advantages over the PI but in some acses the two types of intervals are very similar
+The only look so different in this case because the posterior distribution is highly skewed.
+
+Trying the same example from above but for 6 Water in 9 tosses
+
+```{r}
+p_grid<-seq(from=0, to=1, length.out=1000)
+prior<-rep(1,1000)
+likelihood<-dbinom(6,size=9, prob=p_grid)
+posterior<-likelihood*prior
+posterior<-posterior/sum(posterior)
+samples<-sample(p_grid, size=1e4, replace=TRUE, prob=posterior)
+plot(posterior)
+```
+
+And changing the probability
+
+```{r}
+PI(samples, prob=0.8)
+HPDI(samples, prob=0.8)
+```
+
+```{r}
+PI(samples, prob=0.95)
+HPDI(samples, prob=0.95)
+```
+
+When the posterior is bell shaped it hardly matters what type of interval you use
+
+The HPDI also has some disadvantages. HPDI is more computationally intensive than PI adn suffers from greater simulation varaince, which is a fancy way of saying that it is senstivie to how many samples you draw from the posterior 
+
+Advice is generally that if the choice of interval type makes a difference then you shouldn't be using intervals to summarise the posterior 
+Remember the entire posterior distribution si a Bayesian estimate. it summarises the relative plausibility of each possible value of a parameter
+Intervals fo the distribution are just helpful for summarizing it. If choice of *an interval* leads to different inferences,then you'd be better off just plotting the entire distribution
+
+## 3. Point estimates
+
+The Bayesian parameter estimate is precisely the entire posterior distribution which is not a single number but instead a function that maps each unique parameter value onto a plausibility value.
+
+But if you must produce a single point to summarise the posterior, you'll have to ask and answer more questions. It is very common for scientists to report hte paratmeter value with highest posterior probability, a maximum a posteriori (MAP) estimate. Compute MAP using the following
+```{r}
+p_grid[which.max(posterior)]
+```
+
+
+```{r}
+chainmode(samples,adj=0.01)
+```
+
+But why is this point, the mode interesting. Why not report eh posterior mean or median. 
+```{r}
+mean(samples)
+median(samples)
+```
+
+There are also point estimates and they also summarise the posterior but all three - the mode, mean and median are different in this case. How do we choose?
+
+One way to go beyond using the entire posterior as the estimate is to choose a loss function. A **loss function** is a rule that tells you the *cost* associated with using any particular point estimate.
+Different loss functions imply different point estimates. 
+
+Your loss is proportional to teh avsolaute value of $d-p$ where $d$ is your decision adn $p$ is the correct answer. The loss is proprotional to the distance of your decision from the true value. 
+
+Now once you have teh posterior distribution in hand how should you use it to maximise your expected winnings? It turns out that the parameter value that maximises expected winnings (minimises expected loss) is the median of the posterior distribution.
+
+
+Calculating expected loss for any given decision means using the posterior to average over our uncertianty in teh true value. We don't know the true value but if we are going to use our model's information abtou the parameter that means using the entire posterior distribution. Suppose we deicde p=0.5 will be our decision, tehn expected loss will be:
+```{r}
+sum(posterior*abs(0.5-p_grid))
+```
+
+The symbols posterior and p_grid contain the posterior probabilities and the parameter values respectively. 
+All the code above does is computer the weighted average loss where each loss is weighted by its corresponding posterior probability. 
+
+Repeating this calculation for every possible decision using sapply 
+
+```{r}
+loss<-sapply(p_grid, function(d) sum(posterior*abs(d-p_grid)))
+```
+
+
+```{r}
+p_grid[which.min(loss)]
+median(samples)
+mean(samples)
+```
+$$ y= `r mean(samples)` $$
+And this value is actually the posterior median - the parameter value that splits the posterior density such that half of the mass is above it and half below it.
+So what are we to learn from all of this?
+In order to decide upon a point estimate, a single-value summary of the posterior distribution, we need to pick a loss function. Different loss functions nominate different point estimates. The two most common examples are the absoltute loss (which leads to the median as the point estimate) and the quadratic loss $(d-p)^2$, which leads to the posterior mean(samples) as the point estimate.
+When the posterior distribution is symmetrical and normal- looking, tehn the meidan and mean converge to the same point. 
+
+Usually research scientists don't think abotu loss functions. Adn so any point estimate like the mean or MAP that they may report isn't intended to support any particular decision, but rather to describe the shape of the posterior. Best to communicate as much as you can about the posterior distribution as well as the data and the model itself. 
+
+
+##Binomial likelihood 
+
+$Pr(W|N, p) = \frac{N!}{W!(N-W)!}p^W(1-p)^{N-W})$
+
+
+
+
+
+
+
+
+
+
+
+

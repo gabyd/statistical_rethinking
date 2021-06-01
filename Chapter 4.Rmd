@@ -1,0 +1,39 @@
+---
+title: "Chapter 4 notes"
+author: "Gabriela DSouza"
+date: "01/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+Linear regression is the geocentric model of applied statistics. By linear regression we will mean a family of simple statistical golems that attempt to learn about the mean and variance fo some measurement, using an additive combination of other measurements. Like geocentrism, linear regression is a descriptive model that corresponds to many different process models. If we read its structure too literally we're likely to make mistakes, but used wisely they can be useful 
+Under a probability interpretation, which is necessary for Bayesian work, linear reagression uses a Gaussian (normal) distribution to describe our golem's uncertainty about some measurement of interest. 
+
+With the example of several people flipping a coin 16 times and moving left if it comes up tails and right if comes up heads. 
+It's hard to say where any individual person will end up but you can say with confidence what the collection of positions will be. The distances will be distributed in an approximately normal or Gaussian fashion. 
+This is true even though the underlying distribution is binomial.IT does this because there are so many more possible ways to realise a sequence of left-right steps that sums ot zero. There are slightly fewer ways to realise a sequence that ends up one step left or right from zero. 
+
+```{r}
+pos<- replicate(1000, sum(runif(16,-1,1)))
+
+hist(pos)
+plot(density(pos))
+```
+Although the distribution of positions starts off seemingly idiosyncratic, after 16 steps, it has already taken on a familiar routine. The familiar bell curve of the Gaussian distribution is emerging from the randomness. 
+Any process that adds together random values form teh same distribution converges to a normal. But it's not easy to grasp with addition should result in a bell curve of sums. 
+here's how to think of the process. Whatever the average value of the source distribution, each sample from it can be thought of as a fluctuation from that average value.
+When we begin to add these fluctuations together, they also begin to cancel one another out. 
+A large potiive fluctuation will cancel a large negative one. The more terms in the sum, the more chances for each fluctuation to be cancelled by another or by a series of smaller ones in the opposite direction. So evenutall the most likely sum, in the sense that there are the most ways to realise it, will be a sum in which every fluctuation is cancleled by another, a sum of zero (relative to the mean)
+the shape of the underlying distribution doesn'tmatter. It could be unifrom or anything else. Depending on the underlying distribution the convergence might be slow but it will inevitable. 
+
+Normal by multiplication 
+Suppose that the forwht of an org is influence by a dozen loci each with several alleles that code for more growth. 
+Suppose each of these loci interact with one another such that each increase growth by a percentage. 
+```{r}
+prod()
+```
+
