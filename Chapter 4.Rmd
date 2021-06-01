@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(rethinking)
 ```
 
 ## R Markdown
@@ -34,6 +35,45 @@ Normal by multiplication
 Suppose that the forwht of an org is influence by a dozen loci each with several alleles that code for more growth. 
 Suppose each of these loci interact with one another such that each increase growth by a percentage. 
 ```{r}
-prod()
+prod(1+runif(12,0,0.1))
 ```
+
+Yhid code samples 12 random numbers between 10. adn 1.1 each represneting a proportional increase in growth. Thus 1.0 means no additional growth and 1.1 means a 10 percent increase.What distribution will take this take? Lets sample 10k
+
+```{r}
+growth<-replicate(10000, prod(1 + runif(12,0,0.1)))
+dens(growth, norm.comp=TRUE)
+```
+Previously we established that normal distribtuions arise from summing random fluctuations which is true. But the effect at each locus was multiplied by the effects at all the others, not added. So how does it work?
+We get convergence towares a normal dist because the effect at each locus is quite small. Multiplying small numbers is approximately the same as addition. 
+see for example 
+```{r}
+
+1.1*1.1
+
+(1+0.1)*(1+0.1)=1+0.2+0.01
+
+```
+```{r}
+big<-replicate(1000, prod(1+runif(12,0,0.5)))
+small<-replicate(1000,prod(1 + runif(12,0,0.01)))
+
+dens(big, norm.comp = TRUE)
+dens(small, norm.comp = TRUE)
+```
+
+Normal by log multiplication 
+Large deviates that are multiplied together do not produce gaussian distribution, but they do tend to produce gaussian distributions on the log scale. 
+
+```{r}
+log.big<-replicate(10000, log(prod(1+runif(12,0,0.5))) )
+
+dens(log.big)
+```
+We get he Gaussian distribution back because addinglogs is equivalent to multiplying the original numbers. So even multiplicative interaction fo large deviations can produce Gaussian Distributions once we measure the outcomes on teh log scale.
+
+
+
+
+
 
